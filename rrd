@@ -60,7 +60,7 @@ class RRDServer(object):
 	
 if __name__ == '__main__':
 
-	rrdhost = '0.0.0.'
+	rrdhost = '0.0.0.0'
 	rrdport = 23456
 	rrdpath = '.'
 
