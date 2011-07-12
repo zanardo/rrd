@@ -21,6 +21,8 @@ class RRDServer(object):
 			os.chdir(self.path)
 		except Exception, err:
 			print "ERROR: %s" % err
+		finally:
+			print 'chdir() to "%s"' % self.path
 	
 	def parsepacket(self, packet):
 		m = re.match('^([a-z0-9\-]+) (N:[0-9U\-\.\:]+)$', packet)
