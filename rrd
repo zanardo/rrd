@@ -58,9 +58,6 @@ class RRDServer(object):
 			print "exiting rrd"
 			exit(0)
 	
-	def update(self, database, values):
-		pass
-
 if __name__ == '__main__':
 
 	rrdhost = '0.0.0.'
