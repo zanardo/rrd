@@ -13,6 +13,9 @@ import re
 
 __VERSION__ = '0.3'
 
+class InvalidPacketError(Exception):
+	pass
+
 class RRDServer(object):
 
 	def __init__(self, host='0.0.0.0', port=23456, path='.'):
@@ -33,7 +36,7 @@ class RRDServer(object):
 		if m:
 			return m.groups()
 		else:
-			return None
+			raise InvalidPacketError()
 	
 	def updaterrd(self, name, value):
 		try:
@@ -53,11 +56,11 @@ class RRDServer(object):
 		try:
 			while True:
 				data, addr = server.recvfrom(256)
-				name, value = self.parsepacket(data)
-				if name:
+				try:
+					name, value = self.parsepacket(data)
 					print '[%s] %s' % (addr[0], data)
 					self.updaterrd(name, value)
-				else:
+				except InvalidPacketError:
 					print '[%s] invalid packet' % addr[0]
 
 		except KeyboardInterrupt:
