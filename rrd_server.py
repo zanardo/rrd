@@ -27,6 +27,15 @@ class RRDServer(object):
 		except Exception, err:
 			print "ERROR: %s" % err
 			exit(1)
+
+	def chroot(self):
+		# chroot() only if running as root
+		if os.getuid() == 0:
+			print 'chroot() to .'
+			try:
+				os.chroot('.')
+			except Exception, str:
+				print 'ERROR: chroot(): %s' % str
 	
 	def parsepacket(self, packet):
 		m = re.match('^([a-z0-9\-]+) (N:[0-9U\-\.\:]+)$', packet)
@@ -44,6 +53,7 @@ class RRDServer(object):
 	def run(self):
 		print 'starting rrd daemon'
 		self.chdir()
+		self.chroot()
 		print 'rrd version %s running' % __VERSION__
 		server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
