@@ -22,7 +22,7 @@ class RRDServer(object):
 
     def chdir(self):
         if self.path != '.':
-            print 'chdir() to "%s"' % self.path
+            print 'going to data directory: %s' % self.path
             try:
                 os.chdir(self.path)
             except Exception, err:
@@ -32,7 +32,7 @@ class RRDServer(object):
     def chroot(self):
         # chroot() only if running as root
         if os.getuid() == 0:
-            print 'chroot() to .'
+            print 'entering chroot() jail'
             try:
                 os.chroot('.')
             except Exception, str:
