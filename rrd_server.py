@@ -21,12 +21,13 @@ class RRDServer(object):
         self.path = path
 
     def chdir(self):
-        print 'chdir() to "%s"' % self.path
-        try:
-            os.chdir(self.path)
-        except Exception, err:
-            print "ERROR: %s" % err
-            exit(1)
+        if self.path != '.':
+            print 'chdir() to "%s"' % self.path
+            try:
+                os.chdir(self.path)
+            except Exception, err:
+                print "ERROR: %s" % err
+                exit(1)
 
     def chroot(self):
         # chroot() only if running as root
