@@ -1,8 +1,5 @@
-#!/usr/bin/python2
-#
 # Copyright (c) J. A. Zanardo Jr. <zanardo@gmail.com>
 # Please refer to COPYING for license details
-#
 
 import sys
 import os
