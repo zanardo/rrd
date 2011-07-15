@@ -109,11 +109,13 @@ if __name__ == '__main__':
     rrdgroup = 'nogroup'
 
     def usage():
-        print '''usage: %s -h <host> -p <port> -d <dir>
+        print '''usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
 
         host: ip address to listen (default: 0.0.0.0)
         port: port to listen (default: 23456)
         dir: path to data directory (default: .)
+        user: drop root privileges and run as user <user>
+        group: drop root privileges and run as group <group>
         ''' % sys.argv[0]
         exit(1)
 
