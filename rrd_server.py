@@ -7,6 +7,7 @@ import getopt
 import socket
 import rrdtool
 import re
+import pwd, grp
 
 __VERSION__ = '0.3'
 
@@ -15,10 +16,12 @@ class InvalidPacketError(Exception):
 
 class RRDServer(object):
 
-    def __init__(self, host='0.0.0.0', port=23456, path='.'):
+    def __init__(self, host='0.0.0.0', port=23456, path='.', user='nobody', group='nogroup'):
         self.host = host
         self.port = port
         self.path = path
+        self.user = user
+        self.group = group
 
     def chdir(self):
         if self.path != '.':
@@ -27,6 +30,26 @@ class RRDServer(object):
                 os.chdir(self.path)
             except Exception, err:
                 print "ERROR: %s" % err
+                exit(1)
+
+    def getuidgid(self):
+        if os.getuid() == 0:
+            try:
+                self.uid = pwd.getpwnam(self.user).pw_uid
+                self.gid = grp.getgrnam(self.group).gr_gid
+            except Exception, str:
+                print 'ERROR: %s' % str
+                exit(1)
+
+    def droproot(self):
+        if os.getuid() == 0:
+            print 'dropping root privileges - user %s group %s' % ( self.user, self.group )
+            try:
+                os.setgroups([])
+                os.setgid(self.gid)
+                os.setuid(self.uid)
+            except Exception, err:
+                print 'ERROR: dropping root: %s' % err
                 exit(1)
 
     def chroot(self):
@@ -54,7 +77,9 @@ class RRDServer(object):
     def run(self):
         print 'starting rrd daemon'
         self.chdir()
+        self.getuidgid()
         self.chroot()
+        self.droproot()
         print 'rrd version %s running' % __VERSION__
         server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -80,6 +105,8 @@ if __name__ == '__main__':
     rrdhost = '0.0.0.0'
     rrdport = 23456
     rrdpath = '.'
+    rrduser = 'nobody'
+    rrdgroup = 'nogroup'
 
     def usage():
         print '''usage: %s -h <host> -p <port> -d <dir>
@@ -91,7 +118,7 @@ if __name__ == '__main__':
         exit(1)
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'h:p:d:')
+        opts, args = getopt.getopt(sys.argv[1:], 'h:p:d:u:g:')
     except getopt.GetoptError, err:
         usage()
 
@@ -102,8 +129,12 @@ if __name__ == '__main__':
             rrdport = a
         elif o == '-d':
             rrdpath = a
+        elif o == '-u':
+            rrduser = a
+        elif o == '-g':
+            rrdgroup = a
         else:
             usage()
 
-    rrd = RRDServer(rrdhost, rrdport, rrdpath)
+    rrd = RRDServer(rrdhost, rrdport, rrdpath, rrduser, rrdgroup)
     rrd.run()
