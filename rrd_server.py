@@ -16,12 +16,11 @@ class InvalidPacketError(Exception):
 
 class RRDServer(object):
 
-    def __init__(self, host='0.0.0.0', port=23456, path='.', user='nobody', group='nogroup'):
-        self.host = host
-        self.port = port
-        self.path = path
-        self.user = user
-        self.group = group
+    host = '0.0.0.0'
+    port = 23456
+    path = '.'
+    user = 'nobody'
+    group = 'nogroup'
 
     def chdir(self):
         if self.path != '.':
@@ -102,12 +101,6 @@ class RRDServer(object):
 
 if __name__ == '__main__':
 
-    rrdhost = '0.0.0.0'
-    rrdport = 23456
-    rrdpath = '.'
-    rrduser = 'nobody'
-    rrdgroup = 'nogroup'
-
     def usage():
         print '''usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
 
@@ -124,19 +117,20 @@ if __name__ == '__main__':
     except getopt.GetoptError, err:
         usage()
 
+    rrd = RRDServer()
+
     for o, a in opts:
         if o == '-h':
-            rrdhost = a
+            rrd.host = a
         elif o == '-p':
-            rrdport = a
+            rrd.port = a
         elif o == '-d':
-            rrdpath = a
+            rrd.path = a
         elif o == '-u':
-            rrduser = a
+            rrd.user = a
         elif o == '-g':
-            rrdgroup = a
+            rrd.group = a
         else:
             usage()
 
-    rrd = RRDServer(rrdhost, rrdport, rrdpath, rrduser, rrdgroup)
     rrd.run()
