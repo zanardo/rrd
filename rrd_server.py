@@ -120,17 +120,11 @@ if __name__ == '__main__':
     rrd = RRDServer()
 
     for o, a in opts:
-        if o == '-h':
-            rrd.host = a
-        elif o == '-p':
-            rrd.port = a
-        elif o == '-d':
-            rrd.path = a
-        elif o == '-u':
-            rrd.user = a
-        elif o == '-g':
-            rrd.group = a
-        else:
-            usage()
+        if o == '-h': rrd.host = a
+        elif o == '-p': rrd.port = a
+        elif o == '-d': rrd.path = a
+        elif o == '-u': rrd.user = a
+        elif o == '-g': rrd.group = a
+        else: usage()
 
     rrd.run()
