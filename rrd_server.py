@@ -11,7 +11,7 @@ import pwd, grp
 
 __VERSION__ = '0.3'
 
-class InvalidPacketError(Exception):
+class _InvalidPacketError(Exception):
     pass
 
 class RRDServer(object):
@@ -22,7 +22,7 @@ class RRDServer(object):
     user = 'nobody'
     group = 'nogroup'
 
-    def chdir(self):
+    def __chdir(self):
         if self.path != '.':
             print 'going to data directory: %s' % self.path
             try:
@@ -31,7 +31,7 @@ class RRDServer(object):
                 print "ERROR: %s" % err
                 exit(1)
 
-    def getuidgid(self):
+    def __getuidgid(self):
         if os.getuid() == 0:
             try:
                 self.uid = pwd.getpwnam(self.user).pw_uid
@@ -40,7 +40,7 @@ class RRDServer(object):
                 print 'ERROR: %s' % str
                 exit(1)
 
-    def droproot(self):
+    def __droproot(self):
         if os.getuid() == 0:
             print 'dropping root privileges - user %s group %s' % ( self.user, self.group )
             try:
@@ -51,7 +51,7 @@ class RRDServer(object):
                 print 'ERROR: dropping root: %s' % err
                 exit(1)
 
-    def chroot(self):
+    def __chroot(self):
         # chroot() only if running as root
         if os.getuid() == 0:
             print 'entering chroot() jail'
@@ -60,14 +60,14 @@ class RRDServer(object):
             except Exception, str:
                 print 'ERROR: chroot(): %s' % str
 
-    def parsepacket(self, packet):
+    def __parsepacket(self, packet):
         m = re.match('^([a-z0-9\-]+) (N:[0-9U\-\.\:]+)$', packet)
         if m:
             return m.groups()
         else:
-            raise InvalidPacketError()
+            raise _InvalidPacketError()
 
-    def updaterrd(self, name, value):
+    def __updaterrd(self, name, value):
         try:
             rrdtool.update('data/%s.rrd' % name, value)
         except Exception, err:
@@ -75,10 +75,10 @@ class RRDServer(object):
 
     def run(self):
         print 'starting rrd daemon'
-        self.chdir()
-        self.getuidgid()
-        self.chroot()
-        self.droproot()
+        self.__chdir()
+        self.__getuidgid()
+        self.__chroot()
+        self.__droproot()
         print 'rrd version %s running' % __VERSION__
         server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -89,10 +89,10 @@ class RRDServer(object):
             while True:
                 data, addr = server.recvfrom(256)
                 try:
-                    name, value = self.parsepacket(data)
+                    name, value = self.__parsepacket(data)
                     print '[%s] %s' % (addr[0], data)
-                    self.updaterrd(name, value)
-                except InvalidPacketError:
+                    self.__updaterrd(name, value)
+                except _InvalidPacketError:
                     print '[%s] invalid packet' % addr[0]
 
         except KeyboardInterrupt:
