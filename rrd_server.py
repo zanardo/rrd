@@ -85,19 +85,15 @@ class RRDServer(object):
         server.bind((self.host, int(self.port)))
         print 'listening on %s:%s' % (self.host, self.port)
         print 'rrd daemon is ready to receive requests'
-        try:
-            while True:
-                data, addr = server.recvfrom(256)
-                try:
-                    name, value = self.__parsepacket(data)
-                    print '[%s] %s' % (addr[0], data)
-                    self.__updaterrd(name, value)
-                except _InvalidPacketError:
-                    print '[%s] invalid packet' % addr[0]
+        while True:
+            data, addr = server.recvfrom(256)
+            try:
+                name, value = self.__parsepacket(data)
+                print '[%s] %s' % (addr[0], data)
+                self.__updaterrd(name, value)
+            except _InvalidPacketError:
+                print '[%s] invalid packet' % addr[0]
 
-        except KeyboardInterrupt:
-            print "exiting rrd"
-            exit(0)
 
 if __name__ == '__main__':
 
@@ -127,4 +123,8 @@ if __name__ == '__main__':
         elif o == '-g': rrd.group = a
         else: usage()
 
-    rrd.run()
+    try:
+        rrd.run()
+    except KeyboardInterrupt:
+        print "exiting rrd"
+        exit(0)
