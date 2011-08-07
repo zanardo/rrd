@@ -67,6 +67,22 @@ class RRDServer(object):
         else:
             raise _InvalidPacketError()
 
+    def __createrrd(self, name):
+        if not os.path.isfile('./data/%s.rrd' % name) and os.path.isfile('./conf-data/%s' % name):
+            conf = []
+            fp = open('./conf-data/%s' % name)
+            for line in fp:
+                line = line.strip()
+                if re.match('^#', line):
+                    continue
+                conf.append(line)
+            fp.close()
+            print 'creating ./data/%s.rrd' % name
+            try:
+                rrdtool.create('./data/%s.rrd' % name, conf)
+            except Exception, err:
+                print 'ERROR: [%s] %s' % ( name, err )
+
     def __updaterrd(self, name, value):
         try:
             rrdtool.update('data/%s.rrd' % name, value)
@@ -90,6 +106,7 @@ class RRDServer(object):
             try:
                 name, value = self.__parsepacket(data)
                 print '[%s] %s' % (addr[0], data)
+                self.__createrrd(name)
                 self.__updaterrd(name, value)
             except _InvalidPacketError:
                 print '[%s] invalid packet' % addr[0]
