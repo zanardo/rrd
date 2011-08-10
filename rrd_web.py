@@ -121,7 +121,7 @@ def index():
         <td valign="top">
         <h1>Gráficos RRD</h1>
         <form method="get" action="/" enctype="multipart/form-data">
-        <input type="text" name="re" size="10">
+        <input type="text" name="re" value="{{filter_re}}" size="10">
         <input type="submit" name="submit" value="Filtrar">
         </form>
         <p>
