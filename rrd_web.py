@@ -85,6 +85,63 @@ def list_graph_all_periods(name):
     return bottle.template(template, name=name, periods=PERIODS,
                            footer=page_footer())
 
+def filter_graphs(filter_re):
+    filter_re_compiled = re.compile(filter_re)
+    os.chdir('%s/conf-graph' % DIR)
+    return [
+        graph for graph in os.listdir('.') \
+        if re.match('^[a-z0-9\-]+$', graph) \
+            and re.search(filter_re_compiled, graph) 
+    ]
+
+
+@app.route('/')
+def index():
+    offset = bottle.request.forms.get('offset') or 86400
+    filter_re = bottle.request.GET.get('re') or '!!!'
+    graphs = filter_graphs(filter_re)
+    all_graphs = filter_graphs('.*')
+    template = """
+    <head>
+        <title>Gráficos RRD</title>
+        <link rel="stylesheet" type="text/css" href="/styles.css">
+    </head>
+    <table width="100%" border="0">
+    <tr>
+    <td valign="top" width="500px">
+    <p>
+    %for graph in graphs:
+        <h3>{{graph}}</h3>
+        <img src="/render-graph/{{graph}}/400/100/{{offset}}">
+    %end
+    {{!footer}}
+    </td>
+    <td valign="top">
+    <h1>Gráficos RRD</h1>
+    <form method="get" action="/" enctype="multipart/form-data">
+    <input type="text" name="re" size="10">
+    <input type="submit" name="submit" value="Filtrar">
+    </form>
+    <p>
+    <b>Período</b>
+    <p>
+    %for period in periods:
+        <a href="/?offset={{period[1]}}">{{ period[0] }}</a><br>
+    %end
+    <p>
+    <b>Todos</b>
+    <p>
+    %for graph in all_graphs:
+        <a href="/list-graph-all-periods/{{graph}}">{{graph}}</a><br>
+    %end
+    </td>
+    </tr>
+    </table>
+    """
+
+    return bottle.template(template, footer=page_footer(), periods=PERIODS,
+                           graphs=graphs, offset=offset, all_graphs=all_graphs)
+
 @app.route('/styles.css')
 def css():
     bottle.response.content_type = 'text/css'
