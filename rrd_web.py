@@ -102,41 +102,42 @@ def index():
     graphs = filter_graphs(filter_re)
     all_graphs = filter_graphs('.*')
     template = """
-    <head>
-        <title>Gráficos RRD</title>
-        <link rel="stylesheet" type="text/css" href="/styles.css">
-    </head>
-    <table width="100%" border="0">
-    <tr>
-    <td valign="top" width="500px">
-    <p>
-    %for graph in graphs:
-        <h3>{{graph}}</h3>
-        <img src="/render-graph/{{graph}}/400/100/{{offset}}">
-    %end
-    {{!footer}}
-    </td>
-    <td valign="top">
-    <h1>Gráficos RRD</h1>
-    <form method="get" action="/" enctype="multipart/form-data">
-    <input type="text" name="re" size="10">
-    <input type="submit" name="submit" value="Filtrar">
-    </form>
-    <p>
-    <b>Período</b>
-    <p>
-    %for period in periods:
-        <a href="/?offset={{period[1]}}">{{ period[0] }}</a><br>
-    %end
-    <p>
-    <b>Todos</b>
-    <p>
-    %for graph in all_graphs:
-        <a href="/list-graph-all-periods/{{graph}}">{{graph}}</a><br>
-    %end
-    </td>
-    </tr>
-    </table>
+        <head>
+            <title>Gráficos RRD</title>
+            <link rel="stylesheet" type="text/css" href="/styles.css">
+        </head>
+        <table width="100%" border="0">
+        <tr>
+        <td valign="top" width="500px">
+        <p>
+        %for graph in graphs:
+            <h3>{{graph}}</h3>
+            <a href="/list-graph-all-periods/{{graph}}">
+                <img src="/render-graph/{{graph}}/400/100/{{offset}}"></a>
+        %end
+        {{!footer}}
+        </td>
+        <td valign="top">
+        <h1>Gráficos RRD</h1>
+        <form method="get" action="/" enctype="multipart/form-data">
+        <input type="text" name="re" size="10">
+        <input type="submit" name="submit" value="Filtrar">
+        </form>
+        <p>
+        <b>Período</b>
+        <p>
+        %for period in periods:
+            <a href="/?offset={{period[1]}}">{{ period[0] }}</a><br>
+        %end
+        <p>
+        <b>Todos</b>
+        <p>
+        %for graph in all_graphs:
+            <a href="/list-graph-all-periods/{{graph}}">{{graph}}</a><br>
+        %end
+        </td>
+        </tr>
+        </table>
     """
 
     return bottle.template(template, footer=page_footer(), periods=PERIODS,
