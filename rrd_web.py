@@ -97,7 +97,7 @@ def filter_graphs(filter_re):
 
 @app.route('/')
 def index():
-    offset = bottle.request.forms.get('offset') or 86400
+    offset = bottle.request.GET.get('offset') or 86400
     filter_re = bottle.request.GET.get('re') or '!!!'
     graphs = filter_graphs(filter_re)
     all_graphs = filter_graphs('.*')
@@ -127,7 +127,7 @@ def index():
         <b>Período</b>
         <p>
         %for period in periods:
-            <a href="/?offset={{period[1]}}">{{ period[0] }}</a><br>
+            <a href="/?offset={{period[1]}}&re={{filter_re}}">{{ period[0] }}</a><br>
         %end
         <p>
         <b>Todos</b>
@@ -141,7 +141,8 @@ def index():
     """
 
     return bottle.template(template, footer=page_footer(), periods=PERIODS,
-                           graphs=graphs, offset=offset, all_graphs=all_graphs)
+                           graphs=graphs, offset=offset, all_graphs=all_graphs,
+                           filter_re=filter_re)
 
 @app.route('/styles.css')
 def css():
