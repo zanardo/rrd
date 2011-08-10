@@ -42,11 +42,9 @@ def render_graph(name, width, height, offset):
     try:
         os.chdir(DIR)
         fp = open('./conf-graph/%s' % name)
-        for line in fp:
-            line = line.strip()
-            if re.match('^#', line):
-                continue
-            graph_params.append(line)
+        graph_params.extend(
+            [ line.strip() for line in fp.readlines() if not re.match('^#', line) ]
+        )
         fp.close()
     except Exception, err:
         return err
