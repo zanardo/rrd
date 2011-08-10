@@ -98,8 +98,9 @@ def filter_graphs(filter_re):
 @app.route('/')
 def index():
     offset = bottle.request.GET.get('offset') or 86400
-    filter_re = bottle.request.GET.get('re') or '!!!'
-    graphs = filter_graphs(filter_re)
+    filter_re = bottle.request.GET.get('re') or ''
+    graphs = []
+    if filter_re: graphs = filter_graphs(filter_re)
     all_graphs = filter_graphs('.*')
     template = """
         <head>
