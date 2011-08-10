@@ -95,6 +95,19 @@ def filter_graphs(filter_re):
     ]
 
 
+def get_graph_filters():
+    os.chdir('%s/conf-graph-filters' % DIR)
+    filters = []
+    for f in os.listdir('.'):
+        try:
+            fp = open(f)
+            filter_re = fp.readline()
+            filters.append( (f, filter_re) )
+            fp.close()
+        except:
+            continue
+    return filters
+
 @app.route('/')
 def index():
     offset = bottle.request.GET.get('offset') or 86400
@@ -131,6 +144,14 @@ def index():
             <a href="/?offset={{period[1]}}&re={{filter_re}}">{{ period[0] }}</a><br>
         %end
         <p>
+        %if filters:
+        <b>Filtros Pré-Definidos</b>
+        <p>
+        %for filter in filters:
+            <a href="/?offset={{offset}}&re={{filter[1]}}">{{filter[0]}}</a><br>
+        %end
+        %end
+        <p>
         <b>Todos</b>
         <p>
         %for graph in all_graphs:
@@ -143,7 +164,7 @@ def index():
 
     return bottle.template(template, footer=page_footer(), periods=PERIODS,
                            graphs=graphs, offset=offset, all_graphs=all_graphs,
-                           filter_re=filter_re)
+                           filter_re=filter_re, filters=get_graph_filters())
 
 @app.route('/styles.css')
 def css():
