@@ -11,7 +11,7 @@ import pwd, grp
 
 __VERSION__ = '0.3'
 
-class _InvalidPacketError(Exception):
+class RRDInvalidPacketError(Exception):
     pass
 
 class RRDServer(object):
@@ -65,7 +65,7 @@ class RRDServer(object):
         if m:
             return m.groups()
         else:
-            raise _InvalidPacketError()
+            raise RRDInvalidPacketError()
 
     def __createrrd(self, name):
         if not os.path.isfile('./data/%s.rrd' % name) and os.path.isfile('./conf-data/%s' % name):
@@ -108,7 +108,7 @@ class RRDServer(object):
                 print '[%s] %s' % (addr[0], data)
                 self.__createrrd(name)
                 self.__updaterrd(name, value)
-            except _InvalidPacketError:
+            except RRDInvalidPacketError:
                 print '[%s] invalid packet' % addr[0]
 
 
