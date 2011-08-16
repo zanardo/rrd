@@ -22,8 +22,8 @@ class RRDServer(object):
     host = '0.0.0.0'
     port = 23456
     path = '.'
-    user = 'nobody'
-    group = 'nogroup'
+    user = 'daemon'
+    group = 'daemon'
 
     def __chdir(self):
         if self.path != '.':
@@ -123,8 +123,8 @@ if __name__ == '__main__':
         host: ip address to listen (default: 0.0.0.0)
         port: port to listen (default: 23456)
         dir: path to data directory (default: .)
-        user: drop root privileges and run as user <user>
-        group: drop root privileges and run as group <group>
+        user: drop root privileges and run as user <user> (default: daemon)
+        group: drop root privileges and run as group <group> (default: daemon)
         ''' % sys.argv[0]
         exit(1)
 
