@@ -1,196 +1,92 @@
 rrd
 
-  rrd é uma coleção de ferramentas para Linux utilizadas para coletar
-  estatísticas temporais de computadores ou dispositivos na rede, gravá-las
-  em banco de dados e exibí-las através de gráficos via web. O projeto é
-  composto por um servidor passivo que recebe os dados via UDP, e uma
-  aplicação web com uma interface simples baseada em filtros para exibir os
-  gráficos.
+  rrd is a BSD-like licensed collection of tools for Linux to obtain statistical
+  time-based data from computer devices over the network, writing them in
+  databases, and serving pretty graphs via browser. It is composed by a passive
+  udp-server collector written in Python that is very scalable and has low
+  resources usage, and by a Python WSGI web application with a simple to use
+  interface based on filters to show the graphs.
 
-  As possíveis utilizações do rrd incluem o recebimento de estatísticas e
-  plotagem de gráficos para dados como tráfego de rede, utilização de
-  discos, temperaturas de sistemas, load de servidores, tamanho de fila de
-  e-mails, estatísticas de spam, etc., para qualquer número de máquinas ou
-  equipamentos em uma rede, para monitoramento centralizado.
+  Uses for rrd include receiving statistical data and plotting graphs for
+  network traffic, disk usage, system temperatures, load averages, mail queue
+  sizes, spam statistics, and so on, for any number of machines or devices
+  inside a network, for centralized monitoring.
 
-  O sistema é inteiramente baseado no projeto rrdtool. O rrd é como uma
-  fina camada que embala a excelente ferramenta rrdtool em um sistema
-  distribuído de coleta de estatísticas via rede e posterior exibição. Ele
-  foi feito para ser simples (pense em simplicidade do *nix...), e não
-  possui nenhum wizard de configuração ou templates simples. Experiência
-  anterior é necessária no pacote rrdtool, pois você irá utilizar os
-  comandos do rrdtool e argumentos para a criação de banco de dados e
-  gráficos.
+  The system is entirely based on rrdtool, indeed, rrd is like a thin layer that
+  wraps the fantastic rrdtool software into a distributed network statistical
+  collection and display package. It is done to be simple (think about Unix
+  simplicity!), and it has no fancy configuration wizard or easy templates.
+  Instead, it is very bare-foot -- prior knowledge in rrdtool is required, as
+  you _will_ be barely using rrdtool commands and arguments to create databases
+  and graphs.
 
-  Atenção: O servidor rrd foi desenvolvido para ser seguro (ele roda em um
-  usuário com privilégios limitados e em uma jaula de chroot()), porém ele
-  foi feito para ser utilizado em uma rede interna (LAN). Sendo assim, não
-  possui nenhum sistema de autenticação ou criptografia. Os dados são
-  enviados em texto plano dentro de um datagrama UDP pela rede. rrd é
-  feito para ser simples. Use por seu próprio risco!
+  Attention: Although rrd daemon was designed to be secure (it runs under a
+  non-privileged user account and a chroot-jail), it is supposed to be run
+  inside a Local Area Network, so it has no authentication or encryption. Data
+  is send in plain text inside udp datagrams over the network. rrd is made to be
+  simple. Use at your own risk!
 
-instalando o rrd
+installing rrd
 
-  Você pode obter a última versão do rrd em https://github.com/zanardo/rrd. É
-  necessário o Git. Como root, execute os passos abaixo:
+  You can fetch the latest version of rrd using git:
 
-  # cd /opt
-  # git clone git://github.com/zanardo/rrd.git
+    $ git clone git://github.com/zanardo/rrd.git
 
-  Crie um usuário no sistema para o rrd. Neste exemplo, já criamos o
-  usuário 'rrd' e vamos efetuar login com suas permissões:
+  rrd needs Python 2 (it is tested on Python 2.7), rrdtool with Python wrappers
+  and a WSGI server (like gunicorn or Apache mod_wsgi) to run the web
+  application.
 
-  # su - rrd
+  Installing the daemon:
 
-  Crie os diretórios de dados e configurações:
+    $ cd rrd
+    $ sudo install -o root -g root -m 755 rrd /usr/sbin/rrd
 
-  $ mkdir -p conf-data conf-graph conf-graph-filters data
-  $ logout
+  Creating the database and configurations directory:
 
-  Para carregar o servidor rrd na inicialização, adicione uma linha no cron
-  do usuário root. Estamos utilizando o usuário root para que possamos
-  utilizar a jaula chroot.
+    $ sudo mkdir -p /var/lib/rrd
+    $ sudo chown -R daemon:daemon /var/lib/rrd
 
-  # crontab -e  
-  
-  Adicionar a seguinte linha. As linhas foram separadas na documentação
-  porém devem ser unidas em somente uma!
+  If you want to start rrd at system bootup, use this command in your
+  initialization scripts (like rc.local):
 
-  @reboot exec /usr/bin/python /opt/rrd/rrd_server.py -d /home/rrd -u rrd
-  -g users 1>/dev/null 2>/dev/null &
+    echo 'Starting rrd daemon...'
+    /usr/sbin/rrd 1>/dev/null 2>/dev/null
 
-  Abaixo uma descrição das opções do programa rrd_server.py. Altere caso
-  necessário:
+installing rrdweb
 
-  -h <host> - host que ouvirá as requisições. Padrão: 0.0.0.0
-  -p <porta> - porta que ouvirá as requisições. Padrão: 23456
-  -d <dir> - diretórios dos dados. Padrão: .
-  -u <usuário> - derruba privilégios de root e roda como <usuário>.
-  -g <grupo> - grupo do usuário (grupo de sistema).
+  TODO
 
-instalando o servidor web para visualização dos gráficos
+collectors
 
-  O servidor web é baseado em Python e WSGI, o que possibilita a utilização
-  do Apache, gunicorn, bjoern, cherrypy, etc. Neste exemplo, vamos rodá-lo
-  a partir do servidor gunicorn. É necessária a instalação prévia,
-  geralmente com o comando abaixo:
+  TODO
 
-  # easy_install gunicorn
+the rrd protocol
 
-  Para executar o servidor:
-
-  # su - rrd
-  $ gunicorn rrd_web:app -b 127.0.0.1:8080
- 
-  Você poderá configurar o IP e porta do servidor, e configurar o seu
-  sistema para carregar o servidor na inicialização.
-
-  *FIXME*: Esta seção precisa de revisão!
-
-exemplo: criando um gráfico de medição de system load
-
-  Conhecimento prévio da ferramenta rrdtool é necessário para configurar
-  sua instalação do rrd. Por favor leia a documentação do rrdtool em
-  http://oss.oetiker.ch/rrdtool/. A configuração do rrd é uma mera
-  configuração dos argumentos e parâmetros que serão passados para o
-  rrdcreate, rrdupdate e rrdgraph, comandos estes do rrdtool. Esta
-  interface "crua" traz grande flexibilidade, pois você pode coletar e
-  exibir qualquer tipo de gráfico temporal que você quiser, e criar o
-  gráfico da forma que você quiser, dentro das possibilidades do rrdtool.
-
-  A configuração do rrdcreate, ou como as informações coletadas serão
-  armazenadas, é feita criando arquivos no diretório conf-data/ (dentro do
-  diretório configurado na opção '-d' do rrd_server.py). Crie o arquivo
-  conf-data/localhost-loadavg com o conteúdo abaixo:
-
-    --step=60
-    DS:1m:GAUGE:120:0:U
-    DS:5m:GAUGE:120:0:U
-    DS:15m:GAUGE:120:0:U
-    RRA:AVERAGE:0.5:1:120
-    RRA:AVERAGE:0.5:5:288
-    RRA:AVERAGE:0.5:30:336
-    RRA:AVERAGE:0.5:120:360
-    RRA:AVERAGE:0.5:1440:360
-
-  Assim que o servidor rrd_server.py receber a primeira informação deste
-  coletor, o arquivo data/localhost-loadavg.rrd será automaticamente
-  criado. Este arquivo é o banco de dados do rrdtool.
-
-  Para coletar a informação, você pode utilizar o coletor de exemplo que
-  vêm na distribuição do rrd em collectors/rrd_loadavg.py. Adicione a
-  seguinte linha no cron (juntar as linhas abaixo em uma só):
-
-  * * * * * /usr/bin/python /opt/rrd/collectors/rrd_loadavg.py
-  127.0.0.1:23456 localhost-loadavg 1>/dev/null 2>/dev/null
-
-  A partir de agora, a cada minuto, o Load Average da máquina será coletado
-  e enviado via UDP para o servidor rrd, o qual atualizará os dados em seu
-  banco de dados.
-
-  As configurações dos gráficos residem em conf-graph/ (dentro do diretório
-  configurado na opção '-d' do rrd_server.py). Crie o arquivo
-  conf-graph/localhost-loadavg com o conteúdo abaixo:
-
-    --title=localhost: Load Average
-    DEF:m1m=localhost-loadavg.rrd:1m:AVERAGE
-    DEF:m5m=localhost-loadavg.rrd:5m:AVERAGE
-    DEF:m15m=localhost-loadavg.rrd:15m:AVERAGE
-    LINE1:m1m#0000FF:1 minutes average
-    LINE1:m5m#00FF00:5 minutes average
-    LINE1:m15m#FF0000:15 minutes average
-
-  Basta agora abrir o seu navegador web e carregar o endereço em que o
-  servidor web configurado previamente está ouvindo (exemplo:
-  http://localhost:8080/) e você terá acesso ao novo gráfico. Os gráficos
-  são gerados por demanda para serem exibidos.
-
-como o sistema de filtro funciona na interface web
-
-  A interface web do rrd exibe gráficos baseados em critérios de pesquisa
-  requisitados pelo usuário, ou filtros pré-definidos configurados em
-  conf-graph-filters/. Os filtros casam com o nome do arquivo dos gráficos
-  em conf-graph/. Portanto, você pode padronizar os nomes dos arquivos dos
-  gráficos para organizar os dispositivos monitorados, como:
-  nomedoservidor-tipografico. Desta forma, você poderá filtrar por nome do
-  servidor, tipo de gráfico, etc.
- 
-  Os filtros utilizam expressão regular. Exemplos: "^servidor-", "eth0$".
-  Os filtros pré-definidos são simplesmente buscas salvas. Para criar um
-  filtro que liste todos os gráficos cujo nome inicie por "servidor-", crie
-  o arquivo conf-graph-filters/servidor com o conteúdo "^servidor-" (sem as
-  aspas). O filtro pré-definido será exibido na interface web com o nome do
-  arquivo que você criou.
-
-o protocolo do rrd
-
-  O servidor rrd recebe pacotes UDP com a informação de qual banco de dados
-  deve ser utilizado e quais os dados a serem inseridos. Os dados são
-  repassados ao rrdupdate do rrdtool. Exemplo de um pacote típico:
+  rrd only processes udp packets with rrdupdates, or time-based data to update
+  it's databases. Example for a typical packet content:
 
     localhost-iftraff-eth0 N:864703:6629
 
-  O primeiro termo, "localhost-iftraff-eth0", é o nome do banco de dados,
-  previamente configurado em conf-data/localhost-iftraff-eth0. 
-  
-  O segundo termo, "N:864703:6629", é um argumento do comando rrdupdate.
-  Por favor leia a documentação do rrdtool para entendê-lo. Neste exemplo,
-  o primeiro número é o RX (tráfego recebido) e o segundo é o TX (tráfego
-  enviado), medidos em bytes, de uma interface de rede, em forma absoluta e
-  cumulativa.
+  The first term, localhost-iftraff-eth0, is the database name. It must have
+  been previously created in /var/lib/rrd/conf-data/localhost-iftraff-eth0 In
+  this example, we are collecting network traffic in localhost, on the interface
+  eth0.
 
-criando coletores
+  The second term, N:864703:6629, is a rrdupdate argument. Read the rrdupdate
+  documentation from rrdtool to understand it. The first number is the RX
+  (received) traffic and the second number is the TX (transmitted) traffic, both
+  measured in bytes and in absolute form.
 
-  A criação de coletores é bem simples. Suponha que você queira coletar o
-  percentual de utilzação de disco de um sistema de arquivos montado em /
-  no servidor SERVER1. Um simples shell script utilizando bash resolveria o
-  problema:
+creating collectors
+
+  It's very easy to create collectors. Suppose we want to collect the percentual
+  of used space in the filesystem mounted as / on server01 machine. Create the
+  following bash shell-script:
 
     used=$(df / | grep "/" | sed -e 's/^.* \([0-9]\+\)% .*$/\1/')
-    echo "nome-coletor N:$used" > /dev/udp/192.168.1.10/23456
+    echo "server01-df-root N:$used" &gt; /dev/udp/192.168.1.10/23456
 
-  Este script envia as coletas para o servidor rrd ouvindo em 192.168.1.10.
+  This sends the information to the rrd daemon on 192.168.1.10.
 
-  O rrd vem com alguns coletores em collectors/. Você pode criar coletores
-  em qualquer linguagem de programação que você quiser, desde que ela possa
-  coletar o dados necessários e enviar a coleta via UDP pela rede.
+  You can create collectors in any programming language you want. If you want to
+  code in C, you can use those collectors as your starting point.
