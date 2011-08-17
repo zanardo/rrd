@@ -59,14 +59,9 @@ def render_graph(name, width, height, offset):
     # Generating graph
     try:
         os.chdir('./data')
-        fp, path = tempfile.mkstemp('.png')
-        rrdtool.graph(path, graph_params)
-        fptmp = open(path)
-        chunk = fptmp.read(4096)
-        while chunk:
-            img += chunk
-            chunk = fptmp.read(4096)
-        fptmp.close()
+        with tempfile.NamedTemporaryFile() as tmp:
+            rrdtool.graph(tmp.name, graph_params)
+            img = tmp.file.read()
     except Exception, err:
         return err
 
