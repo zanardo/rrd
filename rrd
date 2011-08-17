@@ -125,13 +125,17 @@ class RRDServer(object):
 if __name__ == '__main__':
 
     def usage():
-        print '''usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
+        print '''
+rrd - passive udp based rrdtool updates collector
 
-        host: ip address to listen (default: 0.0.0.0)
-        port: port to listen (default: 23456)
-        dir: path to data directory (default: /var/lib/rrd)
-        user: drop root privileges and run as user <user> (default: daemon)
-        group: drop root privileges and run as group <group> (default: daemon)
+usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
+
+    host:  ip address to listen (default: 0.0.0.0)
+    port:  port to listen (default: 23456)
+    dir:   path to data directory (default: /var/lib/rrd)
+    user:  drop root privileges and run as user <user> (default: daemon)
+    group: drop root privileges and run as group <group> (default: daemon)
+
         ''' % sys.argv[0]
         exit(1)
 
