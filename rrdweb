@@ -23,8 +23,8 @@ app = bottle.Bottle()
 
 DIR = '/var/lib/rrd'
 
-PERIODS = [ ('Horário', 7200), ('Diário', 86400), ('Semanal', 604800),
-           ('Mensal', 1814400), ('Anual', 21772800) ]
+PERIODS = [ ('Hourly', 7200), ('Daily', 86400), ('Weekly', 604800),
+           ('Monthly', 1814400), ('Yearly', 21772800) ]
 
 @app.route('/render-graph/:name#[a-z0-9\-]+#/:width#\d+#/:height#\d+#/:offset#\d+#')
 def render_graph(name, width, height, offset):
@@ -79,9 +79,9 @@ def list_graph_all_periods(name):
     template = """
         <header>
             <link rel="stylesheet" type="text/css" href="/styles.css">
-            <title>Gráficos RRD - {{ name }}</title>
+            <title>RRD Graphs - {{ name }}</title>
         </header>
-        <h1>Gráficos RRD - {{ name }}</h1>
+        <h1>RRD Graphs - {{ name }}</h1>
         %for period in periods:
             <h3>{{ period[0] }}</h3>
             <img src="/render-graph/{{ name }}/650/200/{{ period[1] }}">
@@ -124,7 +124,7 @@ def index():
     all_graphs = filter_graphs('.*')
     template = """
         <head>
-            <title>Gráficos RRD</title>
+            <title>RRD Graphs</title>
             <link rel="stylesheet" type="text/css" href="/styles.css">
         </head>
         <table width="100%" border="0">
@@ -139,27 +139,27 @@ def index():
         {{!footer}}
         </td>
         <td valign="top">
-        <h1>Gráficos RRD</h1>
+        <h1>RRD Graphs</h1>
         <form method="get" action="/" enctype="multipart/form-data">
         <input type="text" name="re" value="{{filter_re}}" size="10">
-        <input type="submit" name="submit" value="Filtrar">
+        <input type="submit" name="submit" value="Filter">
         </form>
         <p>
-        <b>Período</b>
+        <b>Period</b>
         <p>
         %for period in periods:
             <a href="/?offset={{period[1]}}&re={{filter_re}}">{{ period[0] }}</a><br>
         %end
         <p>
         %if filters:
-        <b>Filtros Pré-Definidos</b>
+        <b>Predefined Filters</b>
         <p>
         %for filter in filters:
             <a href="/?offset={{offset}}&re={{filter[1]}}">{{filter[0]}}</a><br>
         %end
         %end
         <p>
-        <b>Todos</b>
+        <b>All Graphs</b>
         <p>
         %for graph in all_graphs:
             <a href="/list-graph-all-periods/{{graph}}">{{graph}}</a><br>
@@ -192,7 +192,7 @@ def css():
     """
 
 def page_footer():
-    return """<p><small><i>Página gerada em %s por 
+    return """<p><small><i>Page generated on %s by
         <a href="http://zanardo.org/rrd.html">rrd %s</a></i></small>""" % \
             ( time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
              __VERSION__ )
