@@ -71,6 +71,7 @@ def render_graph(name, width, height, offset):
         return err
 
     bottle.response.headers['Content-Type'] = 'image/png'
+    bottle.response.headers['Cache-Control'] = 'max-age=60'
     return img
 
 @app.route('/list-graph-all-periods/:name#[a-z0-9\-]+#')
@@ -176,6 +177,7 @@ def index():
 @app.route('/styles.css')
 def css():
     bottle.response.content_type = 'text/css'
+    bottle.response.headers['Cache-Control'] = 'max-age=300'
     return """
         body { margin: 1em 2em 2em 2em; }
         h1, h2, h3, h4, h5, h6 {
