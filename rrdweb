@@ -12,12 +12,16 @@ import tempfile
 import bottle
 import rrdtool
 import time
+import getopt
+import sys
+
+from paste import httpserver
 
 __VERSION__ = '0.3'
 
 app = bottle.Bottle()
 
-DIR = os.path.realpath(os.path.curdir)
+DIR = '/var/lib/rrd'
 
 PERIODS = [ ('Horário', 7200), ('Diário', 86400), ('Semanal', 604800),
            ('Mensal', 1814400), ('Anual', 21772800) ]
@@ -194,5 +198,44 @@ def page_footer():
              __VERSION__ )
 
 if __name__ == '__main__':
-    bottle.debug(True)
-    bottle.run(reloader=True, app=app, host='0.0.0.0')
+
+    #bottle.debug(True)
+    #bottle.run(reloader=True, app=app, host='0.0.0.0')
+
+    def usage():
+        print '''usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
+
+        host: ip address to listen (default: 127.0.0.1)
+        port: port to listen (default: 8080)
+        dir: path to data directory (default: /var/lib/rrd)
+        user: drop root privileges and run as user <user> (default: daemon)
+        group: drop root privileges and run as group <group> (default: daemon)
+        ''' % sys.argv[0]
+        exit(1)
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'h:p:d:u:g:')
+    except getopt.GetoptError, err:
+        usage()
+
+    host = '127.0.0.1'
+    port = 8080
+    path = '/var/lib/rrd'
+    user = 'daemon'
+    group = 'daemon'
+
+    for o, a in opts:
+        if o == '-h': host = a
+        elif o == '-p': port = a
+        elif o == '-d': path = a
+        elif o == '-u': user = a
+        elif o == '-g': group = a
+        else: usage()
+
+    DIR = path
+
+    try:
+        httpserver.serve(app, host=host, port=port)
+    except KeyboardInterrupt:
+        print "exiting rrdweb"
+        exit(0)
