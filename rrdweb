@@ -1,6 +1,9 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
 # Copyright (c) J. A. Zanardo Jr. <zanardo@gmail.com>
 # Please refer to COPYING for license details
+#
 
 import re
 import os
