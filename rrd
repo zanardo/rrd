@@ -34,6 +34,12 @@ class RRDServer(object):
                 print "ERROR: %s" % err
                 exit(1)
 
+    def __createdirs(self):
+        for d in [ 'data', 'conf-data', 'conf-graph', 'conf-graph-filters' ]:
+            if not os.path.isdir(d):
+                print 'creating directory %s/%s' % ( self.path, d )
+                os.mkdir(d)
+
     def __getuidgid(self):
         if os.getuid() == 0:
             try:
@@ -98,6 +104,7 @@ class RRDServer(object):
         self.__getuidgid()
         self.__chroot()
         self.__droproot()
+        self.__createdirs()
         print 'rrd version %s running' % __VERSION__
         server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
