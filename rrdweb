@@ -15,8 +15,6 @@ import time
 import getopt
 import sys
 
-from paste import httpserver
-
 __VERSION__ = '0.3'
 
 app = bottle.Bottle()
@@ -236,7 +234,7 @@ usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
     DIR = path
 
     try:
-        httpserver.serve(app, host=host, port=port)
+        bottle.run(app=app, host=host, port=port, server='tornado')
     except KeyboardInterrupt:
         print "exiting rrdweb"
         exit(0)
