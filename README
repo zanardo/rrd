@@ -50,7 +50,7 @@ installing rrd
   initialization scripts (like rc.local):
 
     echo 'Starting rrd daemon...'
-    /usr/sbin/rrd 1>/dev/null 2>/dev/null
+    /usr/sbin/rrd 1>/dev/null 2>/dev/null &
 
 installing rrdweb
 
