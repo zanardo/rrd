@@ -32,29 +32,31 @@ installing rrd
 
     $ git clone git://github.com/zanardo/rrd.git
 
-  rrd needs Python 2 (it is tested on Python 2.7), rrdtool with Python wrappers
-  and a WSGI server (like gunicorn or Apache mod_wsgi) to run the web
-  application.
+  Software necessary to run rrd and rrdweb:
 
-  Installing the daemon:
+    - Python >= 2.5 (rrd is mainly tested on Python 2.7)
+    - rrdtool installed with Python libraries
+    - tornado Python's module
+
+  Installing the daemons:
 
     $ cd rrd
     $ sudo install -o root -g root -m 755 rrd /usr/sbin/rrd
+    $ sudo install -o root -g root -m 755 rrdweb /usr/sbin/rrdweb
 
   Creating the database and configurations directory:
 
     $ sudo mkdir -p /var/lib/rrd
     $ sudo chown -R daemon:daemon /var/lib/rrd
 
-  If you want to start rrd at system bootup, use this command in your
-  initialization scripts (like rc.local):
+  If you want to start rrd and rrdweb at system bootup, use the commands below
+  in your initialization scripts (like rc.local):
 
     echo 'Starting rrd daemon...'
     /usr/sbin/rrd 1>/dev/null 2>/dev/null &
 
-installing rrdweb
-
-  TODO
+    echo 'Starting rrd web server...'
+    /usr/sbin/rrdweb 1>/dev/null 2>/dev/null &
 
 collectors
 
