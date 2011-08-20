@@ -32,13 +32,13 @@ class RRDWebServer(object):
     group = 'daemon'
 
     def chdir(self):
-        if self.path != '.':
-            print 'going to data directory: %s' % self.path
-            try:
-                os.chdir(self.path)
-            except Exception, err:
-                print "ERROR: %s" % err
-                exit(1)
+        self.path = os.path.abspath(self.path)
+        print 'going to data directory: %s' % self.path
+        try:
+            os.chdir(os.path.join(self.path, 'data'))
+        except Exception, err:
+            print "ERROR: %s" % err
+            exit(1)
 
     def getuidgid(self):
         if os.getuid() == 0:
@@ -82,8 +82,8 @@ class IndexHandler(tornado.web.RequestHandler):
 
         graphs = []
         if filter_re: 
-            graphs = filter_graphs(filter_re)
-        all_graphs = filter_graphs('.*')
+            graphs = filter_graphs(rrdweb, filter_re)
+        all_graphs = filter_graphs(rrdweb, '.*')
 
         template = tornado.template.Template("""
             <head>
@@ -135,7 +135,7 @@ class IndexHandler(tornado.web.RequestHandler):
         self.write(template.generate(footer=page_footer(), periods=PERIODS,
                                      graphs=graphs, offset=offset,
                                      all_graphs=all_graphs, filter_re=filter_re,
-                                     filters=get_graph_filters()))
+                                     filters=get_graph_filters(rrdweb)))
 
 class GraphHandler(tornado.web.RequestHandler):
     def get(self, name, width, height, offset):
@@ -156,16 +156,13 @@ class GraphHandler(tornado.web.RequestHandler):
         ]
 
         # Loading graph definition
-        global path
-        os.chdir(path)
-        fp = open('./conf-graph/%s' % name)
+        fp = open(os.path.join(rrdweb.path, 'conf-graph', name))
         graph_params.extend(
             [ line.strip() for line in fp.readlines() if not re.match('^#', line) ]
         )
         fp.close()
 
         # Generating graph
-        os.chdir('./data')
         with tempfile.NamedTemporaryFile() as tmp:
             rrdtool.graph(tmp.name, graph_params)
             img = tmp.file.read()
@@ -215,24 +212,19 @@ def page_footer():
             ( time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
              __VERSION__ )
 
-def filter_graphs(filter_re):
+def filter_graphs(rrdweb, filter_re):
     filter_re_compiled = re.compile(filter_re)
-    global path
-    os.chdir('%s/conf-graph' % path)
     return [
-        graph for graph in os.listdir('.') \
+        graph for graph in os.listdir(os.path.join(rrdweb.path, 'conf-graph')) \
         if re.match('^[a-z0-9\-]+$', graph) \
             and re.search(filter_re_compiled, graph) 
     ]
 
-
-def get_graph_filters():
-    global path
-    os.chdir('%s/conf-graph-filters' % path)
+def get_graph_filters(rrdweb):
     filters = []
-    for f in os.listdir('.'):
+    for f in os.listdir(os.path.join(rrdweb.path, 'conf-graph-filters')):
         try:
-            fp = open(f)
+            fp = open(os.path.join(rrdweb.path, 'conf-graph-filters', f))
             filter_re = fp.readline()
             filters.append( (f, filter_re) )
             fp.close()
