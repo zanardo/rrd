@@ -9,82 +9,159 @@ import re
 import os
 import os.path
 import tempfile
-import bottle
 import rrdtool
 import time
 import getopt
 import sys
 
+import tornado.ioloop
+import tornado.web
+
 __VERSION__ = '0.3'
 
-app = bottle.Bottle()
-
 DIR = '/var/lib/rrd'
-
 PERIODS = [ ('Hourly', 7200), ('Daily', 86400), ('Weekly', 604800),
            ('Monthly', 1814400), ('Yearly', 21772800) ]
 
-@app.route('/render-graph/:name#[a-z0-9\-]+#/:width#\d+#/:height#\d+#/:offset#\d+#')
-def render_graph(name, width, height, offset):
+class IndexHandler(tornado.web.RequestHandler):
+    def get(self):
+        offset = self.get_argument('offset', default=86400)
+        filter_re = self.get_argument('re', default='')
 
-    img = ''
+        graphs = []
+        if filter_re: 
+            graphs = filter_graphs(filter_re)
+        all_graphs = filter_graphs('.*')
 
-    graph_params = [
-        "-E",
-        "--end=now",
-        "--start=end-%s" % offset,
-        "--width=%s" % width,
-        "--height=%s" % height,
-        "--font=AXIS:6",
-        "--font=LEGEND:7",
-        "--font=TITLE:7",
-        "--color=BACK#FFFFFF",
-        "--color=SHADEA#FFFFFF",
-        "--color=SHADEB#FFFFFF"
-    ]
+        template = tornado.template.Template("""
+            <head>
+                <title>RRD Graphs</title>
+                <link rel="stylesheet" type="text/css" href="/styles.css">
+            </head>
+            <table width="100%" border="0">
+            <tr>
+            <td valign="top" width="500px">
+            <p>
+            {% for graph in graphs %}
+                <h3>{{ graph }}</h3>
+                <a href="/list-graph-all-periods/{{ graph }}">
+                    <img src="/render-graph/{{ graph }}/400/100/{{ offset }}"></a>
+            {% end %}
+            {% raw footer %}
+            </td>
+            <td valign="top">
+            <h1>RRD Graphs</h1>
+            <form method="get" action="/" enctype="multipart/form-data">
+            <input type="text" name="re" value="{{ filter_re }}" size="10">
+            <input type="submit" name="submit" value="Filter">
+            </form>
+            <p>
+            <b>Period</b>
+            <p>
+            {% for period in periods %}
+                <a href="/?offset={{ period[1] }}&re={{ filter_re }}">{{ period[0] }}</a><br>
+            {% end %}
+            <p>
+            {% if filters %}
+                <b>Predefined Filters</b>
+                <p>
+                {% for filter in filters %}
+                    <a href="/?offset={{ offset }}&re={{ filter[1] }}">{{ filter[0] }}</a><br>
+                {% end %}
+            {% end %}
+            <p>
+            <b>All Graphs</b>
+            <p>
+            {% for graph in all_graphs %}
+                <a href="/list-graph-all-periods/{{ graph }}">{{ graph }}</a><br>
+            {% end %}
+            </td>
+            </tr>
+            </table>
+        """)
 
-    # Loading graph definition
-    try:
+        self.write(template.generate(footer=page_footer(), periods=PERIODS,
+                                     graphs=graphs, offset=offset,
+                                     all_graphs=all_graphs, filter_re=filter_re,
+                                     filters=get_graph_filters()))
+
+
+class GraphHandler(tornado.web.RequestHandler):
+    def get(self, name, width, height, offset):
+        img = ''
+
+        graph_params = [
+            "-E",
+            "--end=now",
+            "--start=end-%s" % str(offset),
+            "--width=%s" % str(width),
+            "--height=%s" % str(height),
+            "--font=AXIS:6",
+            "--font=LEGEND:7",
+            "--font=TITLE:7",
+            "--color=BACK#FFFFFF",
+            "--color=SHADEA#FFFFFF",
+            "--color=SHADEB#FFFFFF"
+        ]
+
+        # Loading graph definition
         os.chdir(DIR)
         fp = open('./conf-graph/%s' % name)
         graph_params.extend(
             [ line.strip() for line in fp.readlines() if not re.match('^#', line) ]
         )
         fp.close()
-    except Exception, err:
-        return err
 
-    # Generating graph
-    try:
+        # Generating graph
         os.chdir('./data')
         with tempfile.NamedTemporaryFile() as tmp:
             rrdtool.graph(tmp.name, graph_params)
             img = tmp.file.read()
-    except Exception, err:
-        return err
 
-    bottle.response.headers['Content-Type'] = 'image/png'
-    bottle.response.headers['Cache-Control'] = 'max-age=60'
-    return img
+        self.set_header('Content-Type', 'image/png')
+        self.set_header('Cache-Control', 'max-age=60')
+        self.write(img)
 
-@app.route('/list-graph-all-periods/:name#[a-z0-9\-]+#')
-def list_graph_all_periods(name):
+class ListGraphAllPeriodsHandler(tornado.web.RequestHandler):
+    def get(self, name):
+        template = tornado.template.Template("""
+            <header>
+                <link rel="stylesheet" type="text/css" href="/styles.css">
+                <title>RRD Graphs - {{ name }}</title>
+            </header>
+            <h1>RRD Graphs - {{ name }}</h1>
+            {% for period in periods %}
+                <h3>{{ period[0] }}</h3>
+                <img src="/render-graph/{{ name }}/650/200/{{ period[1] }}">
+            {% end %}
+            {% raw footer %}
+        """)
+        self.write(template.generate(name=name,periods=PERIODS,footer=page_footer()))
 
-    template = """
-        <header>
-            <link rel="stylesheet" type="text/css" href="/styles.css">
-            <title>RRD Graphs - {{ name }}</title>
-        </header>
-        <h1>RRD Graphs - {{ name }}</h1>
-        %for period in periods:
-            <h3>{{ period[0] }}</h3>
-            <img src="/render-graph/{{ name }}/650/200/{{ period[1] }}">
-        %end
-        {{!footer}}
-    """
+class CssHandler(tornado.web.RequestHandler):
+    def get(self):
+        self.set_header('Content-Type', 'text/css')
+        self.set_header('Cache-Control', 'max-age=60')
+        self.write("""
+            body { margin: 1em 2em 2em 2em; }
+            h1, h2, h3, h4, h5, h6 {
+              font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
+              font-weight: normal; 
+            }
+            img { border: none; }
+            dt { font-weight: bold; }
+            pre { background-color: #C0C0C0; font-weight: bold; }
+            a:link { color: #0000EE; }
+            a:visited { color: #0000EE; }
+            a:active { color: #0000EE; }
+            a:hover { color: #0000EE; }
+        """)
 
-    return bottle.template(template, name=name, periods=PERIODS,
-                           footer=page_footer())
+def page_footer():
+    return """<p><small><i>Page generated on %s by
+        <a href="http://zanardo.org/rrd.html">rrd %s</a></i></small>""" % \
+            ( time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
+             __VERSION__ )
 
 def filter_graphs(filter_re):
     filter_re_compiled = re.compile(filter_re)
@@ -109,93 +186,15 @@ def get_graph_filters():
             continue
     return filters
 
-@app.route('/')
-def index():
-    offset = bottle.request.GET.get('offset') or 86400
-    filter_re = bottle.request.GET.get('re') or ''
-    graphs = []
-    if filter_re: graphs = filter_graphs(filter_re)
-    all_graphs = filter_graphs('.*')
-    template = """
-        <head>
-            <title>RRD Graphs</title>
-            <link rel="stylesheet" type="text/css" href="/styles.css">
-        </head>
-        <table width="100%" border="0">
-        <tr>
-        <td valign="top" width="500px">
-        <p>
-        %for graph in graphs:
-            <h3>{{graph}}</h3>
-            <a href="/list-graph-all-periods/{{graph}}">
-                <img src="/render-graph/{{graph}}/400/100/{{offset}}"></a>
-        %end
-        {{!footer}}
-        </td>
-        <td valign="top">
-        <h1>RRD Graphs</h1>
-        <form method="get" action="/" enctype="multipart/form-data">
-        <input type="text" name="re" value="{{filter_re}}" size="10">
-        <input type="submit" name="submit" value="Filter">
-        </form>
-        <p>
-        <b>Period</b>
-        <p>
-        %for period in periods:
-            <a href="/?offset={{period[1]}}&re={{filter_re}}">{{ period[0] }}</a><br>
-        %end
-        <p>
-        %if filters:
-        <b>Predefined Filters</b>
-        <p>
-        %for filter in filters:
-            <a href="/?offset={{offset}}&re={{filter[1]}}">{{filter[0]}}</a><br>
-        %end
-        %end
-        <p>
-        <b>All Graphs</b>
-        <p>
-        %for graph in all_graphs:
-            <a href="/list-graph-all-periods/{{graph}}">{{graph}}</a><br>
-        %end
-        </td>
-        </tr>
-        </table>
-    """
+app = tornado.web.Application([
+    (r'/render-graph/([a-z0-9\-]+)/(\d+)/(\d+)/(\d+)', GraphHandler),
+    (r'/list-graph-all-periods/([a-z0-9\-]+)', ListGraphAllPeriodsHandler),
+    (r'/styles.css', CssHandler),
+    (r'/', IndexHandler),
+])
 
-    return bottle.template(template, footer=page_footer(), periods=PERIODS,
-                           graphs=graphs, offset=offset, all_graphs=all_graphs,
-                           filter_re=filter_re, filters=get_graph_filters())
-
-@app.route('/styles.css')
-def css():
-    bottle.response.content_type = 'text/css'
-    bottle.response.headers['Cache-Control'] = 'max-age=300'
-    return """
-        body { margin: 1em 2em 2em 2em; }
-        h1, h2, h3, h4, h5, h6 {
-          font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
-          font-weight: normal; 
-        }
-        img { border: none; }
-        dt { font-weight: bold; }
-        pre { background-color: #C0C0C0; font-weight: bold; }
-        a:link { color: #0000EE; }
-        a:visited { color: #0000EE; }
-        a:active { color: #0000EE; }
-        a:hover { color: #0000EE; }
-    """
-
-def page_footer():
-    return """<p><small><i>Page generated on %s by
-        <a href="http://zanardo.org/rrd.html">rrd %s</a></i></small>""" % \
-            ( time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
-             __VERSION__ )
 
 if __name__ == '__main__':
-
-    #bottle.debug(True)
-    #bottle.run(reloader=True, app=app, host='0.0.0.0')
 
     def usage():
         print '''
@@ -231,10 +230,5 @@ usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
         elif o == '-g': group = a
         else: usage()
 
-    DIR = path
-
-    try:
-        bottle.run(app=app, host=host, port=port, server='tornado')
-    except KeyboardInterrupt:
-        print "exiting rrdweb"
-        exit(0)
+    app.listen(port)
+    tornado.ioloop.IOLoop.instance().start()
