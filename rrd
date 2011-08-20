@@ -25,7 +25,7 @@ class RRDServer(object):
     user = 'daemon'
     group = 'daemon'
 
-    def __chdir(self):
+    def chdir(self):
         if self.path != '.':
             print 'going to data directory: %s' % self.path
             try:
@@ -34,13 +34,13 @@ class RRDServer(object):
                 print "ERROR: %s" % err
                 exit(1)
 
-    def __createdirs(self):
+    def createdirs(self):
         for d in [ 'data', 'conf-data', 'conf-graph', 'conf-graph-filters' ]:
             if not os.path.isdir(d):
                 print 'creating directory %s/%s' % ( self.path, d )
                 os.mkdir(d)
 
-    def __getuidgid(self):
+    def getuidgid(self):
         if os.getuid() == 0:
             try:
                 self.uid = pwd.getpwnam(self.user).pw_uid
@@ -49,7 +49,7 @@ class RRDServer(object):
                 print 'ERROR: %s' % str
                 exit(1)
 
-    def __droproot(self):
+    def droproot(self):
         if os.getuid() == 0:
             print 'dropping root privileges - user %s group %s' % ( self.user, self.group )
             try:
@@ -60,7 +60,7 @@ class RRDServer(object):
                 print 'ERROR: dropping root: %s' % err
                 exit(1)
 
-    def __chroot(self):
+    def chroot(self):
         # chroot() only if running as root
         if os.getuid() == 0:
             print 'entering chroot() jail'
@@ -69,14 +69,14 @@ class RRDServer(object):
             except Exception, str:
                 print 'ERROR: chroot(): %s' % str
 
-    def __parsepacket(self, packet):
+    def parsepacket(self, packet):
         m = re.match('^([a-z0-9\-]+) (N:[0-9U\-\.\:]+)$', packet)
         if m:
             return m.groups()
         else:
             raise RRDInvalidPacketError()
 
-    def __createrrd(self, name):
+    def createrrd(self, name):
         if not os.path.isfile('./data/%s.rrd' % name) and os.path.isfile('./conf-data/%s' % name):
             conf = []
             fp = open('./conf-data/%s' % name)
@@ -92,7 +92,7 @@ class RRDServer(object):
             except Exception, err:
                 print 'ERROR: [%s] %s' % ( name, err )
 
-    def __updaterrd(self, name, value):
+    def updaterrd(self, name, value):
         try:
             rrdtool.update('data/%s.rrd' % name, value)
         except Exception, err:
@@ -100,11 +100,11 @@ class RRDServer(object):
 
     def run(self):
         print 'starting rrd daemon'
-        self.__chdir()
-        self.__getuidgid()
-        self.__chroot()
-        self.__droproot()
-        self.__createdirs()
+        self.chdir()
+        self.getuidgid()
+        self.chroot()
+        self.droproot()
+        self.createdirs()
         print 'rrd version %s running' % __VERSION__
         server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -114,10 +114,10 @@ class RRDServer(object):
         while True:
             data, addr = server.recvfrom(256)
             try:
-                name, value = self.__parsepacket(data)
+                name, value = self.parsepacket(data)
                 print '[%s] %s' % (addr[0], data)
-                self.__createrrd(name)
-                self.__updaterrd(name, value)
+                self.createrrd(name)
+                self.updaterrd(name, value)
             except RRDInvalidPacketError:
                 print '[%s] invalid packet' % addr[0]
 
