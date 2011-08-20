@@ -4,8 +4,8 @@ rrd
   time-based data from computer devices over the network, writing them in
   databases, and serving pretty graphs via browser. It is composed by a passive
   udp-server collector written in Python that is very scalable and has low
-  resources usage, and by a Python WSGI web application with a simple to use
-  interface based on filters to show the graphs.
+  resources usage, and by a Tornado web application with a simple to use
+  interface based on filters to display the graphs.
 
   Uses for rrd include receiving statistical data and plotting graphs for
   network traffic, disk usage, system temperatures, load averages, mail queue
@@ -14,11 +14,10 @@ rrd
 
   The system is entirely based on rrdtool, indeed, rrd is like a thin layer that
   wraps the fantastic rrdtool software into a distributed network statistical
-  collection and display package. It is done to be simple (think about Unix
-  simplicity!), and it has no fancy configuration wizard or easy templates.
-  Instead, it is very bare-foot -- prior knowledge in rrdtool is required, as
-  you _will_ be barely using rrdtool commands and arguments to create databases
-  and graphs.
+  collection and display package. It is made to be simple (think about Unix
+  simplicity!), and it has no fancy configuration wizard.  Instead, it is very
+  bare-foot -- prior knowledge in rrdtool is required, as you _will_ be barely
+  using rrdtool commands and arguments to create databases and graphs.
 
   Attention: Although rrd daemon was designed to be secure (it runs under a
   non-privileged user account and a chroot-jail), it is supposed to be run
@@ -65,14 +64,14 @@ collectors
 the rrd protocol
 
   rrd only processes udp packets with rrdupdates, or time-based data to update
-  it's databases. Example for a typical packet content:
+  its databases. Example for a typical packet content:
 
     localhost-iftraff-eth0 N:864703:6629
 
   The first term, localhost-iftraff-eth0, is the database name. It must have
-  been previously created in /var/lib/rrd/conf-data/localhost-iftraff-eth0 In
-  this example, we are collecting network traffic in localhost, on the interface
-  eth0.
+  been previously configured in /var/lib/rrd/conf-data/localhost-iftraff-eth0.
+  In this example, we are collecting network traffic in localhost, on the
+  interface eth0.
 
   The second term, N:864703:6629, is a rrdupdate argument. Read the rrdupdate
   documentation from rrdtool to understand it. The first number is the RX
@@ -81,14 +80,14 @@ the rrd protocol
 
 creating collectors
 
-  It's very easy to create collectors. Suppose we want to collect the percentual
-  of used space in the filesystem mounted as / on server01 machine. Create the
-  following bash shell-script:
+  It's very easy to create collectors. Suppose you want to collect the
+  percentage of used space in the filesystem mounted as / on server01 machine.
+  Create the following bash shell-script:
 
     used=$(df / | grep "/" | sed -e 's/^.* \([0-9]\+\)% .*$/\1/')
-    echo "server01-df-root N:$used" &gt; /dev/udp/192.168.1.10/23456
+    echo "server01-df-root N:$used" > /dev/udp/192.168.1.10/23456
 
-  This sends the information to the rrd daemon on 192.168.1.10.
+  This sends the information to the rrd daemon, listening on 192.168.1.10.
 
-  You can create collectors in any programming language you want. If you want to
-  code in C, you can use those collectors as your starting point.
+  You can create collectors in any programming language you want, that supports
+  sending data via udp datagrams.
