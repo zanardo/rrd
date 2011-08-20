@@ -13,6 +13,7 @@ import rrdtool
 import time
 import getopt
 import sys
+import pwd, grp
 
 import tornado.ioloop
 import tornado.web
@@ -22,11 +23,57 @@ __VERSION__ = '0.3'
 PERIODS = [ ('Hourly', 7200), ('Daily', 86400), ('Weekly', 604800),
            ('Monthly', 1814400), ('Yearly', 21772800) ]
 
-host = '127.0.0.1'
-port = 8080
-path = '/var/lib/rrd'
-user = 'daemon'
-group = 'daemon'
+class RRDWebServer(object):
+
+    host = '127.0.0.1'
+    port = 8080
+    path = '/var/lib/rrd'
+    user = 'daemon'
+    group = 'daemon'
+
+    def chdir(self):
+        if self.path != '.':
+            print 'going to data directory: %s' % self.path
+            try:
+                os.chdir(self.path)
+            except Exception, err:
+                print "ERROR: %s" % err
+                exit(1)
+
+    def getuidgid(self):
+        if os.getuid() == 0:
+            try:
+                self.uid = pwd.getpwnam(self.user).pw_uid
+                self.gid = grp.getgrnam(self.group).gr_gid
+            except Exception, err:
+                print 'ERROR: %s' % err
+                exit(1)
+
+    def droproot(self):
+        if os.getuid() == 0:
+            print 'dropping root privileges - user %s group %s' % ( self.user, self.group )
+            try:
+                os.setgroups([])
+                os.setgid(self.gid)
+                os.setuid(self.uid)
+            except Exception, err:
+                print 'ERROR: dropping root: %s' % err
+                exit(1)
+
+    def run(self):
+        print 'starting rrdweb daemon'
+        self.chdir()
+        self.getuidgid()
+        self.droproot()
+        app = tornado.web.Application([
+            (r'/render-graph/([a-z0-9\-]+)/(\d+)/(\d+)/(\d+)', GraphHandler),
+            (r'/list-graph-all-periods/([a-z0-9\-]+)', ListGraphAllPeriodsHandler),
+            (r'/styles.css', CssHandler),
+            (r'/', IndexHandler) ])
+        print 'rrdweb version %s running' % __VERSION__
+        print 'listening on %s:%s' % ( self.host, self.port )
+        app.listen(self.port)
+        tornado.ioloop.IOLoop.instance().start()
 
 class IndexHandler(tornado.web.RequestHandler):
     def get(self):
@@ -89,7 +136,6 @@ class IndexHandler(tornado.web.RequestHandler):
                                      graphs=graphs, offset=offset,
                                      all_graphs=all_graphs, filter_re=filter_re,
                                      filters=get_graph_filters()))
-
 
 class GraphHandler(tornado.web.RequestHandler):
     def get(self, name, width, height, offset):
@@ -194,19 +240,6 @@ def get_graph_filters():
             continue
     return filters
 
-def run():
-    global host, port
-    print 'starting rrdweb daemon'
-    app = tornado.web.Application([
-        (r'/render-graph/([a-z0-9\-]+)/(\d+)/(\d+)/(\d+)', GraphHandler),
-        (r'/list-graph-all-periods/([a-z0-9\-]+)', ListGraphAllPeriodsHandler),
-        (r'/styles.css', CssHandler),
-        (r'/', IndexHandler) ])
-    print 'rrdweb version %s running' % __VERSION__
-    print 'listening on %s:%s' % ( host, port )
-    app.listen(port)
-    tornado.ioloop.IOLoop.instance().start()
-
 if __name__ == '__main__':
 
     def usage():
@@ -229,12 +262,14 @@ usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
     except getopt.GetoptError, err:
         usage()
 
+    rrdweb = RRDWebServer()
+
     for o, a in opts:
-        if o == '-h': host = a
-        elif o == '-p': port = a
-        elif o == '-d': path = a
-        elif o == '-u': user = a
-        elif o == '-g': group = a
+        if o == '-h': rrdweb.host = a
+        elif o == '-p': rrdweb.port = a
+        elif o == '-d': rrdweb.path = a
+        elif o == '-u': rrdweb.user = a
+        elif o == '-g': rrdweb.group = a
         else: usage()
 
-    run()
+    rrdweb.run()
