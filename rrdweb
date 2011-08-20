@@ -208,7 +208,7 @@ class CssHandler(tornado.web.RequestHandler):
 
 def page_footer():
     return """<p><small><i>Page generated on %s by
-        <a href="http://zanardo.org/rrd.html">rrd %s</a></i></small>""" % \
+        <a href="https://github.com/zanardo/rrd">rrd %s</a></i></small>""" % \
             ( time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
              __VERSION__ )
 
