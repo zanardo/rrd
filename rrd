@@ -45,8 +45,8 @@ class RRDServer(object):
             try:
                 self.uid = pwd.getpwnam(self.user).pw_uid
                 self.gid = grp.getgrnam(self.group).gr_gid
-            except Exception, str:
-                print 'ERROR: %s' % str
+            except Exception, err:
+                print 'ERROR: %s' % err
                 exit(1)
 
     def droproot(self):
@@ -66,8 +66,8 @@ class RRDServer(object):
             print 'entering chroot() jail'
             try:
                 os.chroot('.')
-            except Exception, str:
-                print 'ERROR: chroot(): %s' % str
+            except Exception, err:
+                print 'ERROR: chroot(): %s' % err
 
     def parsepacket(self, packet):
         m = re.match('^([a-z0-9\-]+) (N:[0-9U\-\.\:]+)$', packet)
