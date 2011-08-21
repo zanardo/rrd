@@ -214,11 +214,11 @@ def page_footer():
 
 def filter_graphs(rrdweb, filter_re):
     filter_re_compiled = re.compile(filter_re)
-    return [
+    return sorted(
         graph for graph in os.listdir(os.path.join(rrdweb.path, 'conf-graph')) \
         if re.match('^[a-z0-9\-]+$', graph) \
             and re.search(filter_re_compiled, graph) 
-    ]
+    )
 
 def get_graph_filters(rrdweb):
     filters = []
@@ -230,7 +230,7 @@ def get_graph_filters(rrdweb):
             fp.close()
         except:
             continue
-    return filters
+    return sorted(filters)
 
 if __name__ == '__main__':
 
