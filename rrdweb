@@ -90,46 +90,43 @@ class IndexHandler(tornado.web.RequestHandler):
                 <title>RRD Graphs</title>
                 <link rel="stylesheet" type="text/css" href="/styles.css">
             </head>
-            <table width="100%" border="0">
-            <tr>
-            <td valign="top" width="500px">
-            <p>
-            {% for graph in graphs %}
-                <h3>{{ graph }}</h3>
-                <a href="/list-graph-all-periods/{{ graph }}">
-                    <img src="/render-graph/{{ graph }}/400/100/{{ offset }}"></a>
-            {% end %}
+            <div id="content">
+                <div id="right">
+                    <h1>RRD Graphs</h1>
+                    <form method="get" action="/" enctype="multipart/form-data">
+                    <input type="text" name="re" value="{{ filter_re }}" size="10">
+                    <input type="submit" name="submit" value="Filter">
+                    </form>
+                    <p>
+                    <b>Period</b>
+                    <p>
+                    {% for period in periods %}
+                        <a href="/?offset={{ period[1] }}&re={{ filter_re }}">{{ period[0] }}</a><br>
+                    {% end %}
+                    <p>
+                    {% if filters %}
+                        <b>Predefined Filters</b>
+                        <p>
+                        {% for filter in filters %}
+                            <a href="/?offset={{ offset }}&re={{ filter[1] }}">{{ filter[0] }}</a><br>
+                        {% end %}
+                    {% end %}
+                    <p>
+                    <b>All Graphs</b>
+                    <p>
+                    {% for graph in all_graphs %}
+                        <a href="/list-graph-all-periods/{{ graph }}">{{ graph }}</a><br>
+                    {% end %}
+                </div>
+                <div id="left">
+                    {% for graph in graphs %}
+                        <h3>{{ graph }}</h3>
+                        <a href="/list-graph-all-periods/{{ graph }}">
+                            <img src="/render-graph/{{ graph }}/400/100/{{ offset }}"></a>
+                    {% end %}
+                </div>
+            </div>
             {% raw footer %}
-            </td>
-            <td valign="top">
-            <h1>RRD Graphs</h1>
-            <form method="get" action="/" enctype="multipart/form-data">
-            <input type="text" name="re" value="{{ filter_re }}" size="10">
-            <input type="submit" name="submit" value="Filter">
-            </form>
-            <p>
-            <b>Period</b>
-            <p>
-            {% for period in periods %}
-                <a href="/?offset={{ period[1] }}&re={{ filter_re }}">{{ period[0] }}</a><br>
-            {% end %}
-            <p>
-            {% if filters %}
-                <b>Predefined Filters</b>
-                <p>
-                {% for filter in filters %}
-                    <a href="/?offset={{ offset }}&re={{ filter[1] }}">{{ filter[0] }}</a><br>
-                {% end %}
-            {% end %}
-            <p>
-            <b>All Graphs</b>
-            <p>
-            {% for graph in all_graphs %}
-                <a href="/list-graph-all-periods/{{ graph }}">{{ graph }}</a><br>
-            {% end %}
-            </td>
-            </tr>
-            </table>
         """)
 
         self.write(template.generate(footer=page_footer(), periods=PERIODS,
@@ -193,11 +190,9 @@ class CssHandler(tornado.web.RequestHandler):
         self.set_header('Cache-Control', 'max-age=60')
         self.write("""
             body { margin: 1em 2em 2em 2em; }
-            h1, h2, h3, h4, h5, h6 {
-              font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif;
-              font-weight: normal; 
-            }
-            img { border: none; }
+            #content { max-width: 700px; }
+            #right { float: right; }
+            h1, h2, h3, h4, h5, h6 { font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif; font-weight: normal; } 
             dt { font-weight: bold; }
             pre { background-color: #C0C0C0; font-weight: bold; }
             a:link { color: #0000EE; }
