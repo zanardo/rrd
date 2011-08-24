@@ -95,6 +95,7 @@ class IndexHandler(tornado.web.RequestHandler):
                     <h1>RRD Graphs</h1>
                     <form method="get" action="/" enctype="multipart/form-data">
                     <input type="text" name="re" value="{{ filter_re }}" size="10">
+                    <input type="hidden" name="offset" value="{{ offset }}">
                     <input type="submit" name="submit" value="Filter">
                     </form>
                     <p>
