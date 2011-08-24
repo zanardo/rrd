@@ -124,27 +124,27 @@ class RRDServer(object):
 
 if __name__ == '__main__':
 
+    rrd = RRDServer()
+
     def usage():
         print '''
 rrd - passive udp based rrdtool updates collector
 
 usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
 
-    host:  ip address to listen (default: 0.0.0.0)
-    port:  port to listen (default: 23456)
-    dir:   path to data directory (default: /var/lib/rrd)
-    user:  drop root privileges and run as user <user> (default: daemon)
-    group: drop root privileges and run as group <group> (default: daemon)
+    host:  ip address to listen (default: %s)
+    port:  port to listen (default: %s)
+    dir:   path to data directory (default: %s)
+    user:  drop root privileges and run as user <user> (default: %s)
+    group: drop root privileges and run as group <group> (default: %s)
 
-        ''' % sys.argv[0]
+        ''' % ( sys.argv[0], rrd.host, rrd.port, rrd.path, rrd.user, rrd.group )
         exit(1)
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'h:p:d:u:g:')
     except getopt.GetoptError, err:
         usage()
-
-    rrd = RRDServer()
 
     for o, a in opts:
         if o == '-h': rrd.host = a
