@@ -229,6 +229,8 @@ def get_graph_filters(rrdweb):
 
 if __name__ == '__main__':
 
+    rrdweb = RRDWebServer()
+
     def usage():
         print '''
 rrdweb - web application to display rrd graphs
@@ -241,15 +243,14 @@ usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
     user:  drop root privileges and run as user <user> (default: %s)
     group: drop root privileges and run as group <group> (default: %s)
 
-        ''' % ( sys.argv[0], host, port, path, user, group )
+        ''' % ( sys.argv[0], rrdweb.host, rrdweb.port, rrdweb.path, rrdweb.user,
+               rrdweb.group )
         exit(1)
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'h:p:d:u:g:')
     except getopt.GetoptError, err:
         usage()
-
-    rrdweb = RRDWebServer()
 
     for o, a in opts:
         if o == '-h': rrdweb.host = a
