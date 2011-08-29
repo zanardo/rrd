@@ -191,8 +191,8 @@ class CssHandler(tornado.web.RequestHandler):
         self.set_header('Cache-Control', 'max-age=60')
         self.write("""
             body { margin: 1em 2em 2em 2em; }
-            #left { float: left; margin-right: 40px; }
             #footer { clear: both; padding-top: 20px; font-size: 13px; font-style: italic; }
+            #right { position: absolute; top: 10px; left: 530px; }
             h1, h2, h3, h4, h5, h6 { font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif; font-weight: normal; } 
             dt { font-weight: bold; }
             pre { background-color: #C0C0C0; font-weight: bold; }
