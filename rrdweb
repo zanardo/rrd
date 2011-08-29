@@ -181,7 +181,7 @@ class ListGraphAllPeriodsHandler(tornado.web.RequestHandler):
                 <h3>{{ period[0] }}</h3>
                 <img src="/render-graph/{{ name }}/650/200/{{ period[1] }}">
             {% end %}
-            {% raw footer %}
+            <div id="footer">{% raw footer %}</div>
         """)
         self.write(template.generate(name=name,periods=PERIODS,footer=page_footer()))
 
@@ -191,8 +191,8 @@ class CssHandler(tornado.web.RequestHandler):
         self.set_header('Cache-Control', 'max-age=60')
         self.write("""
             body { margin: 1em 2em 2em 2em; }
-            #left { float: left; margin-right: 40px ;}
-            #footer { clear: both; }
+            #left { float: left; margin-right: 40px; }
+            #footer { clear: both; padding-top: 20px; font-size: 13px; font-style: italic; }
             h1, h2, h3, h4, h5, h6 { font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif; font-weight: normal; } 
             dt { font-weight: bold; }
             pre { background-color: #C0C0C0; font-weight: bold; }
@@ -203,8 +203,8 @@ class CssHandler(tornado.web.RequestHandler):
         """)
 
 def page_footer():
-    return """<p><small><i>Page generated on %s by
-        <a href="https://github.com/zanardo/rrd">rrd %s</a></i></small>""" % \
+    return """Page generated on %s by
+        <a href="https://github.com/zanardo/rrd">rrd %s</a>""" % \
             ( time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()),
              __VERSION__ )
 
