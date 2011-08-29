@@ -196,6 +196,7 @@ class CssHandler(tornado.web.RequestHandler):
             h1, h2, h3, h4, h5, h6 { font-family: "Gill Sans", "Trebuchet MS", Verdana, sans-serif; font-weight: normal; } 
             dt { font-weight: bold; }
             pre { background-color: #C0C0C0; font-weight: bold; }
+            img { border: 0; }
             a:link { color: #0000EE; }
             a:visited { color: #0000EE; }
             a:active { color: #0000EE; }
