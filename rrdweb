@@ -28,6 +28,7 @@ class RRDWebServer(object):
     host = '127.0.0.1'
     port = 8080
     path = '/var/lib/rrd'
+    uri = '/'
     user = 'daemon'
     group = 'daemon'
 
@@ -66,10 +67,11 @@ class RRDWebServer(object):
         self.getuidgid()
         self.droproot()
         app = tornado.web.Application([
-            (r'/render-graph/([a-z0-9\-]+)/(\d+)/(\d+)/(\d+)', GraphHandler),
-            (r'/list-graph-all-periods/([a-z0-9\-]+)', ListGraphAllPeriodsHandler),
-            (r'/styles.css', CssHandler),
-            (r'/', IndexHandler) ])
+            (self.uri + r'render-graph/([a-z0-9\-]+)/(\d+)/(\d+)/(\d+)', GraphHandler),
+            (self.uri + r'list-graph-all-periods/([a-z0-9\-]+)', ListGraphAllPeriodsHandler),
+            (self.uri + r'styles.css', CssHandler),
+            (self.uri, IndexHandler),
+        ])
         print 'rrdweb version %s running' % __VERSION__
         print 'listening on %s:%s' % ( self.host, self.port )
         app.listen(self.port)
@@ -88,19 +90,19 @@ class IndexHandler(tornado.web.RequestHandler):
         template = tornado.template.Template("""
             <head>
                 <title>RRD Graphs</title>
-                <link rel="stylesheet" type="text/css" href="/styles.css">
+                <link rel="stylesheet" type="text/css" href="{% raw uri %}styles.css">
             </head>
             <div id="content">
                 <div id="left">
                     {% for graph in graphs %}
                         <h3>{{ graph }}</h3>
-                        <a href="/list-graph-all-periods/{{ graph }}">
-                            <img src="/render-graph/{{ graph }}/400/100/{{ offset }}"></a>
+                        <a href="{% raw uri %}list-graph-all-periods/{{ graph }}">
+                            <img src="{% raw uri %}render-graph/{{ graph }}/400/100/{{ offset }}"></a>
                     {% end %}
                 </div>
                 <div id="right">
                     <h1>RRD Graphs</h1>
-                    <form method="get" action="/" enctype="multipart/form-data">
+                    <form method="get" action="{% raw uri %}" enctype="multipart/form-data">
                     <input type="text" name="re" value="{{ filter_re }}" size="10">
                     <input type="hidden" name="offset" value="{{ offset }}">
                     <input type="submit" name="submit" value="Filter">
@@ -109,21 +111,21 @@ class IndexHandler(tornado.web.RequestHandler):
                     <b>Period</b>
                     <p>
                     {% for period in periods %}
-                        <a href="/?offset={{ period[1] }}&re={{ filter_re }}">{{ period[0] }}</a><br>
+                        <a href="{% raw uri %}?offset={{ period[1] }}&re={{ filter_re }}">{{ period[0] }}</a><br>
                     {% end %}
                     <p>
                     {% if filters %}
                         <b>Predefined Filters</b>
                         <p>
                         {% for filter in filters %}
-                            <a href="/?offset={{ offset }}&re={{ filter[1] }}">{{ filter[0] }}</a><br>
+                            <a href="{% raw uri %}?offset={{ offset }}&re={{ filter[1] }}">{{ filter[0] }}</a><br>
                         {% end %}
                     {% end %}
                     <p>
                     <b>All Graphs</b>
                     <p>
                     {% for graph in all_graphs %}
-                        <a href="/list-graph-all-periods/{{ graph }}">{{ graph }}</a><br>
+                        <a href="{% raw uri %}list-graph-all-periods/{{ graph }}">{{ graph }}</a><br>
                     {% end %}
                 </div>
             </div>
@@ -131,7 +133,7 @@ class IndexHandler(tornado.web.RequestHandler):
         """)
 
         self.write(template.generate(footer=page_footer(), periods=PERIODS,
-                                     graphs=graphs, offset=offset,
+                                     graphs=graphs, offset=offset, uri=rrdweb.uri,
                                      all_graphs=all_graphs, filter_re=filter_re,
                                      filters=get_graph_filters(rrdweb)))
 
@@ -173,17 +175,18 @@ class ListGraphAllPeriodsHandler(tornado.web.RequestHandler):
     def get(self, name):
         template = tornado.template.Template("""
             <header>
-                <link rel="stylesheet" type="text/css" href="/styles.css">
+                <link rel="stylesheet" type="text/css" href="{% raw uri %}styles.css">
                 <title>RRD Graphs - {{ name }}</title>
             </header>
             <h1>RRD Graphs - {{ name }}</h1>
             {% for period in periods %}
                 <h3>{{ period[0] }}</h3>
-                <img src="/render-graph/{{ name }}/650/200/{{ period[1] }}">
+                <img src="{% raw uri %}render-graph/{{ name }}/650/200/{{ period[1] }}">
             {% end %}
             <div id="footer">{% raw footer %}</div>
         """)
-        self.write(template.generate(name=name,periods=PERIODS,footer=page_footer()))
+        self.write(template.generate(name=name,periods=PERIODS,footer=page_footer(),
+                  uri=rrdweb.uri))
 
 class CssHandler(tornado.web.RequestHandler):
     def get(self):
@@ -237,20 +240,21 @@ if __name__ == '__main__':
         print '''
 rrdweb - web application to display rrd graphs
 
-usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
+usage: %s -h <host> -p <port> -d <dir> -i <uri> -u <user> -g <group>
 
     host:  ip address to listen (default: %s)
     port:  port to listen (default: %s)
     dir:   path to data directory (default: %s)
+    uri:   base uri for acessing via browser (default: %s)
     user:  drop root privileges and run as user <user> (default: %s)
     group: drop root privileges and run as group <group> (default: %s)
 
-        ''' % ( sys.argv[0], rrdweb.host, rrdweb.port, rrdweb.path, rrdweb.user,
-               rrdweb.group )
+        ''' % ( sys.argv[0], rrdweb.host, rrdweb.port, rrdweb.path, rrdweb.uri,
+               rrdweb.user, rrdweb.group )
         exit(1)
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'h:p:d:u:g:')
+        opts, args = getopt.getopt(sys.argv[1:], 'h:p:d:i:u:g:')
     except getopt.GetoptError, err:
         usage()
 
@@ -258,6 +262,7 @@ usage: %s -h <host> -p <port> -d <dir> -u <user> -g <group>
         if o == '-h': rrdweb.host = a
         elif o == '-p': rrdweb.port = a
         elif o == '-d': rrdweb.path = a
+        elif o == '-i': rrdweb.uri = a
         elif o == '-u': rrdweb.user = a
         elif o == '-g': rrdweb.group = a
         else: usage()
