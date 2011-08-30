@@ -115,7 +115,7 @@ class RRDServer(object):
             data, addr = server.recvfrom(256)
             try:
                 name, value = self.parsepacket(data)
-                print '[%s] %s' % (addr[0], data)
+                print '[%s] %s %s' % (addr[0], name, value)
                 self.createrrd(name)
                 self.updaterrd(name, value)
             except RRDInvalidPacketError:
